@@ -89,3 +89,63 @@ def recortar_silencio(x, fs, frame_ms=20, umbral=0.05, margen_ms=40):
     inicio = max(0, activos[0] * n - margen)
     fin = min(len(x), (activos[-1] + 1) * n + margen)
     return x[inicio:fin], (inicio, fin)
+
+
+def agregar_ruido(x, snr_db, semilla=0):
+    """Suma ruido blanco gaussiano para obtener una SNR objetivo (en dB).
+
+        y[n] = x[n] + r[n],   SNR = 10 log10( P_x / P_r )
+
+    La potencia de la señal P_x se mide sobre `x` (conviene pasar la señal
+    ya recortada, para que el silencio no reduzca P_x).
+    """
+    rng = np.random.default_rng(semilla)         # semilla fija -> reproducible
+    p_senal = np.mean(x ** 2)
+    p_ruido = p_senal / (10 ** (snr_db / 10))
+    ruido = rng.normal(0.0, np.sqrt(p_ruido), size=len(x))
+    return x + ruido
+
+
+def snr_medida(x_limpia, x_ruidosa):
+    """SNR real (dB) entre una señal limpia y su versión con ruido."""
+    ruido = x_ruidosa - x_limpia
+    return 10 * np.log10(np.mean(x_limpia ** 2) / np.mean(ruido ** 2))
+
+
+def espectro_fft(x, fs):
+    """Espectro de magnitud de un solo lado usando la FFT.
+
+    Se aplica una ventana de Hann para reducir el 'leakage' espectral.
+    Devuelve (f, mag): f en Hz de 0 a fs/2 y mag = |X[k]|/N.
+    """
+    N = len(x)
+    ventana = np.hanning(N)
+    X = np.fft.rfft(x * ventana)
+    f = np.fft.rfftfreq(N, d=1.0 / fs)
+    return f, np.abs(X) / N
+
+
+def centroide_espectral(f, mag):
+    """Frecuencia 'media' ponderada por la magnitud del espectro (Hz)."""
+    return float(np.sum(f * mag) / np.sum(mag))
+
+
+def caracteristicas(x, fs):
+    """Características básicas de una señal (idealmente ya recortada)."""
+    f, mag = espectro_fft(x, fs)
+    cruces = int(np.sum(np.abs(np.diff(np.sign(x))) > 0))
+    return {
+        "fs_Hz": fs,
+        "Ts_s": 1.0 / fs,
+        "n_muestras": len(x),
+        "duracion_s": len(x) / fs,
+        "minimo": float(x.min()),
+        "maximo": float(x.max()),
+        "media": float(x.mean()),
+        "pico_abs": float(np.max(np.abs(x))),
+        "rms": float(np.sqrt(np.mean(x ** 2))),
+        "energia": float(np.sum(x ** 2)),
+        "cruces_por_cero": cruces,
+        "f_dominante_Hz": float(f[np.argmax(mag)]),
+        "centroide_Hz": centroide_espectral(f, mag),
+    }
