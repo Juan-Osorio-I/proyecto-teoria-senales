@@ -1,9 +1,8 @@
 # Guía de grabación
 
 ## Meta
-- Mínimo exigido en la entrega 2: 2 comandos. Grabamos los 4.
-- Primera ronda: 2 a 4 hablantes × 4 comandos × 3 repeticiones.
-- Para la entrega final se ampliará a 8–10 hablantes × 5 repeticiones.
+- Entrega 2: 4 comandos × 3 repeticiones de 1 hablante (12 audios), ya grabados.
+- Entrega final: ampliar a varios hablantes y más repeticiones por comando.
 
 ## Cómo grabar
 1. Lugar silencioso y mismo micrófono o celular para todas las grabaciones, a ~20 cm de la boca.
@@ -24,5 +23,5 @@ Los audios de la entrega van en `data/muestras/`.
 ## Registro de hablantes
 | Hablante | Sexo | Edad aprox. | Dispositivo |
 |---|---|---|---|
-| 01 | | | |
+| 01 |masculino |20 |computador |
 | 02 | | | |
