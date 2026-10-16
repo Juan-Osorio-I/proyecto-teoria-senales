@@ -59,3 +59,33 @@ def listar_grabaciones(carpeta):
             "repeticion": rep,
         })
     return registros
+
+def normalizar_pico(x):
+    """Escala la señal para que su valor máximo absoluto sea 1."""
+    pico = np.max(np.abs(x))
+    return x / pico if pico > 0 else x
+
+
+def recortar_silencio(x, fs, frame_ms=20, umbral=0.05, margen_ms=40):
+    """Segmenta el comando eliminando el silencio al inicio y al final.
+
+    Criterio: se divide la señal en tramos de `frame_ms` ms y se calcula la
+    energía de cada uno. Un tramo es 'activo' si su energía supera `umbral`
+    (fracción) de la energía del tramo más fuerte. El comando va desde el
+    primer hasta el último tramo activo, más un pequeño margen.
+
+    Devuelve (x_recortada, (inicio, fin)) con los índices de muestra.
+    """
+    n = max(1, int(fs * frame_ms / 1000))        # muestras por tramo
+    n_tramos = len(x) // n
+    if n_tramos == 0:
+        return x, (0, len(x))
+    tramos = x[: n_tramos * n].reshape(n_tramos, n)
+    energia = np.sum(tramos ** 2, axis=1)        # energía de cada tramo
+    activos = np.where(energia > umbral * energia.max())[0]
+    if len(activos) == 0:
+        return x, (0, len(x))
+    margen = int(fs * margen_ms / 1000)
+    inicio = max(0, activos[0] * n - margen)
+    fin = min(len(x), (activos[-1] + 1) * n + margen)
+    return x[inicio:fin], (inicio, fin)
